@@ -1,0 +1,22 @@
+{
+  "name": "@kiggi/devenv-common",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Kiggi",
+    "email": "git@brandner.dev"
+  },
+  "license": "MIT",
+  "packageManager": "pnpm@10.8.1",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.16"
+  }
+}
