@@ -14,22 +14,49 @@ export enum EFeatureOptionType {
   STRING = 'string',
 }
 
-export type IFeatureOptions = {description?: string} & ({
+export interface IFeatureBooleanOption {
   type: EFeatureOptionType.BOOLEAN;
   default?: boolean;
-} | {
+  description?: string;
+}
+
+export type IFeatureStringOption = {
   type: EFeatureOptionType.STRING;
   default?: string;
-  proposals?: string[];
-});
+  description?: string;
+} & ({
+    proposals: string[];
+  } | {
+    enum: string[];
+  } | {}
+);
+
+export type IFeatureOption = IFeatureBooleanOption | IFeatureStringOption;
+
+// TODO
+export interface IFeatureCustomizations { }
 
 interface IFeatureConfig {
   id: string;
   version: string;
   name: string;
-  description: string;
+  description?: string;
+  documentationURL?: string;
+  licenseURL?: string;
+  keywords?: string;
+  options?: Record<string, IFeatureOption>;
+  containerEnv: Record<string, string>;
+  priviledged?: boolean;
+  init?: boolean;
+  capAdd?: string[];
+  securityOpt?: string[];
+  entrypoint?: string;
+  customizations?: IFeatureCustomizations;
+  dependsOn?: Record<string, Record<string, boolean | string>>;
+  installsAfter?: string[];
+  legacyIds?: string[];
+  deprecated?: boolean;
   mounts?: IMountConfig[];
-  options?: Record<string, IFeatureOptions>;
 }
 
 export default IFeatureConfig;
