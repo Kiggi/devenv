@@ -1,6 +1,6 @@
 import { getLogger } from 'log4js';
 import Installer, { type InstallerOptions } from './Installer';
-import { type ProcessPromise } from 'zx';
+import { type ProcessOutput } from 'zx';
 import { type StringSchema } from 'yup';
 
 /**
@@ -36,21 +36,21 @@ class AptInstaller extends Installer {
   }
 
   // TODO: Check if package is automatically installed
-  protected override async exists(): Promise<boolean> {
-    this.logger.debug('Checking if already installed');
+  protected override async exists(): Promise<[boolean, ProcessOutput]> {
+    this.logger.debug('Checking if already installed...');
 
     // Check if the package is listed as installed
     // Format for manually installed packages is:
     // "<packageName>/<repository> <version> <arch> [installed]"
-    const checkOutput = await this.$exec`apt list --installed`.nothrow().pipe(
+    const processOutput = await this.$exec`apt list --installed`.nothrow().pipe(
       `grep -x "^${this.pkgName}/.*\[installed\]$"`
     );
 
     // If the package is not installed, grep will return a non-zero exit code
-    return checkOutput.exitCode === 0;
+    return [processOutput.exitCode === 0, processOutput];
   }
 
-  protected override async install(): Promise<ProcessPromise> {
+  protected override async install(): Promise<ProcessOutput> {
     this.logger.debug('Installing package with apt');
     
     return this.$exec`apt-get install -y ${this.pkgName}`;

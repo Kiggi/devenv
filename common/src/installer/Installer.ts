@@ -1,6 +1,7 @@
 import { type Logger } from 'log4js';
 import { string, type StringSchema } from 'yup';
-import { $, type ProcessPromise } from 'zx';
+import { $, type ProcessOutput } from 'zx';
+import { logOutput } from '../output/LoggerConfig';
 
 export type InstallerOptions = Partial<{
   abortController: AbortController;
@@ -103,7 +104,7 @@ abstract class Installer {
    * @param ac - The AbortController to use for aborting the check
    * @return A promise that resolves to true if the package exists, false otherwise
    */
-  protected abstract exists(): Promise<boolean>;
+  protected abstract exists(): Promise<[boolean, ProcessOutput]>;
 
   /**
    * Install the package using the specified package manager.
@@ -111,7 +112,7 @@ abstract class Installer {
    * @param ac - The AbortController to use for aborting the installation
    * @return A promise that resolves to the result of the installation process
    */
-  protected abstract install(): Promise<ProcessPromise>;
+  protected abstract install(): Promise<ProcessOutput>;
 
   /**
    * Run the installation process.
@@ -122,8 +123,11 @@ abstract class Installer {
   public async run(): Promise<void> {
     this.logger.debug('Starting installation...');
 
+    const [exists, existsOutput] = await this.exists();
+    this.logger.trace('Output (Exists):', logOutput(existsOutput));
+
     // If the package already exists, skip installation
-    if (await this.exists()) {
+    if (exists) {
       this.logger.info('✅ Package already installed, skipping...');
       return;
     }
@@ -131,10 +135,10 @@ abstract class Installer {
     // Start the installation process
     this.logger.info(`🔧 Installing...`);
     try {
-      const installResult = await this.install();
+      const installOutput = await this.install();
 
       this.logger.info('✅ Installation successful!');
-      this.logger.trace('Output:', installResult.text());
+      this.logger.trace('Output (Install):', logOutput(installOutput));
     } catch (error) {
       this.logger.error('❌ Installation failed', error);
       throw new Error(`Failed to install ${this.pkgInfo}`, { cause: error });

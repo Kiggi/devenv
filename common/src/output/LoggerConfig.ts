@@ -1,5 +1,6 @@
 import { isEqual } from 'lodash';
 import { configure, getLogger, type Configuration } from 'log4js';
+import { ProcessOutput } from 'zx';
 
 export const LoggerConfig: Configuration = {
   appenders: { default: { type: 'stdout', layout: { type: 'colored' } } },
@@ -24,4 +25,12 @@ export function initLogger(config: Partial<Configuration> = {}): void {
       override: config,
       default: LoggerConfig,
     });
+}
+
+export function logOutput(output: ProcessOutput) {
+  return {
+    output: output.text(),
+    exitCode: output.exitCode,
+    duration: output.duration,
+  }
 }
