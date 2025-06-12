@@ -1,16 +1,28 @@
 import { type Logger } from 'log4js';
+import { string, type StringSchema } from 'yup';
 import { $, type ProcessPromise } from 'zx';
 
-export type InstallerOptions = Partial<{ abortController: AbortController; longName: string }>;
+export type InstallerOptions = Partial<{
+  abortController: AbortController;
+  longName: string;
+}>;
 
 // TODO: Add preflight checks for the package manager
 abstract class Installer {
   protected abstract readonly logger: Logger;
 
   protected pkgName: string;
+  /**
+   * The descriptive and user-friendly name of the package.
+   */
   protected longName?: string;
   protected abortController?: AbortController;
 
+  /**
+   * The package manager used for installation (e.g., 'apt', 'npm').
+   * 
+   * This should be defined in derived classes.
+   */
   protected abstract readonly packageManager: string;
 
   /**
@@ -22,15 +34,31 @@ abstract class Installer {
     return this.longName ? `${this.pkgName} (${this.longName})` : this.pkgName;
   }
 
+  /**
+   * The `$` function from `zx` with the abort controller attached.
+   * This allows for aborting the process if needed.
+   */
   protected readonly $exec = $({ ac: this.abortController });
 
-  protected constructor(
-    packageName: string,
-    opts: InstallerOptions = {}
-  ) {
+  protected constructor(packageName: string, opts: InstallerOptions = {}) {
     this.pkgName = packageName;
+    this.pkgNameSchema.validateSync(packageName);
+
     this.longName = opts.longName;
     this.abortController = opts.abortController;
+  }
+
+  /**
+   * Validate the package name.
+   *
+   * Call `.validateSync()` or `.validate()` to use this schema.
+   * @returns A Yup string schema for validating the package name
+   */
+  protected get pkgNameSchema(): StringSchema {
+    return string()
+      .strict()
+      .trim('Package name cannot have leading or trailing whitespace')
+      .required('Package name is required');
   }
 
   /**
@@ -75,7 +103,7 @@ abstract class Installer {
    * @param ac - The AbortController to use for aborting the check
    * @return A promise that resolves to true if the package exists, false otherwise
    */
-  protected abstract exists(ac: AbortController | undefined): Promise<boolean>;
+  protected abstract exists(): Promise<boolean>;
 
   /**
    * Install the package using the specified package manager.
@@ -83,7 +111,7 @@ abstract class Installer {
    * @param ac - The AbortController to use for aborting the installation
    * @return A promise that resolves to the result of the installation process
    */
-  protected abstract install(ac: AbortController | undefined): ProcessPromise;
+  protected abstract install(): Promise<ProcessPromise>;
 
   /**
    * Run the installation process.
@@ -95,7 +123,7 @@ abstract class Installer {
     this.logger.debug('Starting installation...');
 
     // If the package already exists, skip installation
-    if (await this.exists(this.abortController)) {
+    if (await this.exists()) {
       this.logger.info('✅ Package already installed, skipping...');
       return;
     }
@@ -103,10 +131,10 @@ abstract class Installer {
     // Start the installation process
     this.logger.info(`🔧 Installing...`);
     try {
-      const installResult = await this.install(this.abortController);
+      const installResult = await this.install();
 
       this.logger.info('✅ Installation successful!');
-      this.logger.debug('Install Output', installResult.text());
+      this.logger.trace('Output:', installResult.text());
     } catch (error) {
       this.logger.error('❌ Installation failed', error);
       throw new Error(`Failed to install ${this.pkgInfo}`, { cause: error });
