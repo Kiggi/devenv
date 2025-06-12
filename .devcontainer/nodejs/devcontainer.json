@@ -1,0 +1,10 @@
+{
+  "name": "Node.js Test",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "runArgs": [
+    "--userns=keep-id"
+  ],
+  "features": {
+    "./feature": {}
+  }
+}
