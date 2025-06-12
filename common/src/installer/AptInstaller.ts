@@ -1,6 +1,6 @@
 import { getLogger } from 'log4js';
-import Installer from './Installer';
-import { $, ProcessPromise } from 'zx';
+import Installer, { InstallerOptions } from './Installer';
+import { ProcessPromise } from 'zx';
 
 // TODO: Add config option for versioning
 class AptInstaller extends Installer {
@@ -9,7 +9,7 @@ class AptInstaller extends Installer {
 
   constructor(
     packageName: string,
-    opts: Partial<{ abortController: AbortController; longName: string }> = {}
+    opts: InstallerOptions = {}
   ) {
     super(packageName, opts);
     this.setupLogger({ packageManager: this.packageManager });
@@ -20,12 +20,16 @@ class AptInstaller extends Installer {
    * @returns A promise that resolves to true if the package is installed, false otherwise.
    */
   // TODO: Check if package is automatically installed
-  protected async exists(ac: AbortController | undefined): Promise<boolean> {
+  protected async exists(): Promise<boolean> {
     this.logger.debug('Checking if already installed');
-    const checkOutput = await $({
-      ac,
+
+    const $nothrow = this.$exec({
       nothrow: true,
-    })`apt list --installed | grep -x "^${this.pkgName}/.*\[installed\]$"`;
+    });
+
+    const checkOutput = await $nothrow`apt list --installed`.pipe(
+      `grep -x "^${this.pkgName}/.*\[installed\]$"`
+    );
 
     return checkOutput.exitCode === 0;
   }
@@ -36,9 +40,7 @@ class AptInstaller extends Installer {
    */
   protected install(ac: AbortController | undefined): ProcessPromise {
     this.logger.debug('Installing package with apt');
-    return $({
-      ac
-    })`apt-get install -y ${this.pkgName}`;
+    return this.$exec`apt-get install -y ${this.pkgName}`;
   }
 }
 

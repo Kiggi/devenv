@@ -1,5 +1,7 @@
 import { type Logger } from 'log4js';
-import { type ProcessPromise } from 'zx';
+import { $, type ProcessPromise } from 'zx';
+
+export type InstallerOptions = Partial<{ abortController: AbortController; longName: string }>;
 
 // TODO: Add preflight checks for the package manager
 abstract class Installer {
@@ -11,9 +13,20 @@ abstract class Installer {
 
   protected abstract readonly packageManager: string;
 
+  /**
+   * Get the package information string.
+   * This method can be overridden in derived classes to provide custom package info.
+   * @return A string representing the package information
+   */
+  protected get pkgInfo(): string {
+    return this.longName ? `${this.pkgName} (${this.longName})` : this.pkgName;
+  }
+
+  protected readonly $exec = $({ ac: this.abortController });
+
   protected constructor(
     packageName: string,
-    opts: Partial<{ abortController: AbortController; longName: string }> = {}
+    opts: InstallerOptions = {}
   ) {
     this.pkgName = packageName;
     this.longName = opts.longName;
@@ -71,15 +84,6 @@ abstract class Installer {
    * @return A promise that resolves to the result of the installation process
    */
   protected abstract install(ac: AbortController | undefined): ProcessPromise;
-
-  /**
-   * Get the package information string.
-   * This method can be overridden in derived classes to provide custom package info.
-   * @return A string representing the package information
-   */
-  protected get pkgInfo(): string {
-    return this.longName ? `${this.pkgName} (${this.longName})` : this.pkgName;
-  }
 
   /**
    * Run the installation process.
