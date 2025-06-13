@@ -10,7 +10,7 @@ import { type IStreamFactory } from '../helpers/stream';
 // TODO: Add config option for different executable name in PATH
 // TODO: Consider using StreamInstaller as base class (e.g. .deb, .AppImage, etc.)
 class ScriptInstaller extends Installer {
-  protected override readonly logger = getLogger('AptInstaller');
+  protected override readonly logger = getLogger(ScriptInstaller.name);
   protected override readonly packageManager = 'apt';
   protected readonly streamFactory: IStreamFactory;
 

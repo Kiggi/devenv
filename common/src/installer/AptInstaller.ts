@@ -8,7 +8,7 @@ import { type StringSchema } from 'yup';
  */
 // TODO: Add config option for versioning
 class AptInstaller extends Installer {
-  protected override readonly logger = getLogger('AptInstaller');
+  protected override readonly logger = getLogger(AptInstaller.name);
   protected override readonly packageManager = 'apt';
 
   constructor(packageName: string, opts: InstallerOptions = {}) {
